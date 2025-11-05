@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 3100,
     host: '0.0.0.0', // Permite acceso desde cualquier IP
     open: true,
     allowedHosts: true, // Permite todos los hosts

@@ -3,7 +3,8 @@ import { AuthProvider } from './hooks/useAuth.tsx'
 import { CartProvider } from './contexts/CartContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
-import { Auth } from './pages/Auth'
+import { Login } from './pages/Login'
+import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
 import { Orders } from './pages/Orders'
 import { MenuPage } from './pages/Menu'
@@ -22,9 +23,9 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <Routes>
-        <Route path="/login" element={<Auth />} />
-        <Route path="/register" element={<Auth />} />
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/auth" element={<Login />} />
         <Route
           path="/*"
           element={
