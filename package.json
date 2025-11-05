@@ -1,0 +1,44 @@
+{
+  "name": "waiter-now",
+  "version": "1.0.0",
+  "description": "Aplicación móvil para digitalizar la experiencia en restaurantes",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:web\" \"npm run dev:mobile\"",
+    "dev:backend": "npm run dev --workspace=@waiter-now/backend",
+    "dev:web": "npm run dev --workspace=@waiter-now/web",
+    "dev:mobile": "npm run dev --workspace=@waiter-now/mobile",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "rimraf node_modules packages/*/node_modules apps/*/node_modules",
+    "setup": "npm install && npm run db:generate && npm run db:push",
+    "db:generate": "npm run db:generate --workspace=@waiter-now/backend",
+    "db:push": "npm run db:push --workspace=@waiter-now/backend",
+    "db:studio": "npm run db:studio --workspace=@waiter-now/backend"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "author": "Waiter Now Team",
+  "license": "MIT",
+  "keywords": [
+    "restaurant",
+    "mobile-app",
+    "digital-menu",
+    "food-ordering",
+    "react-native",
+    "nodejs"
+  ]
+}

@@ -1,0 +1,360 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuario
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  password    String?  // Opcional para usuarios de Google OAuth
+  phone       String?
+  avatar      String?
+  googleId    String?  @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  orders      Order[]
+  favorites   UserFavorite[]
+  reviews     Review[]
+  tableReservations TableReservation[]
+
+  @@map("users")
+}
+
+// Modelo de Restaurante
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  address     String
+  phone       String
+  email       String   @unique
+  logo        String?
+  banner      String?
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  rating      Float    @default(0)
+  totalReviews Int     @default(0)
+  
+  // Configuraciones
+  acceptsOrders Boolean @default(true)
+  deliveryTime  Int     @default(30) // minutos
+  minimumOrder  Float   @default(0)
+  
+  // Horarios (JSON como String)
+  workingHours String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  menus       Menu[]
+  orders      Order[]
+  reviews     Review[]
+  favorites   UserFavorite[]
+  qrCodes     QRCode[]
+  tables      Table[]
+
+  @@map("restaurants")
+}
+
+// Modelo de Menú
+model Menu {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  isActive     Boolean  @default(true)
+  restaurantId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categories   Category[]
+
+  @@map("menus")
+}
+
+// Modelo de Categoría
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  menuId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  menu        Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  items       Item[]
+
+  @@map("categories")
+}
+
+// Modelo de Producto/Item
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  image       String?
+  isActive    Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  
+  // Información nutricional
+  calories    Int?
+  ingredients String?
+  allergens   String?
+  
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  variants    ItemVariant[]
+
+  @@map("items")
+}
+
+// Modelo de Variantes de Items (tamaños, extras, etc.)
+model ItemVariant {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  priceChange Float    @default(0) // cambio en el precio base
+  isActive    Boolean  @default(true)
+  itemId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  item        Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  orderItems  OrderItemVariant[]
+
+  @@map("item_variants")
+}
+
+// Modelo de Pedido
+model Order {
+  id           String      @id @default(cuid())
+  orderNumber  String      @unique
+  status       String @default("PENDING")
+  total        Float
+  subtotal     Float
+  tax          Float       @default(0)
+  deliveryFee  Float       @default(0)
+  discount     Float       @default(0)
+  
+  // Información del cliente
+  customerName  String?
+  customerPhone String?
+  customerEmail String?
+  
+  // Información de entrega
+  tableNumber   String?  // Mantener para compatibilidad con pedidos sin mesa asignada
+  notes         String?
+  
+  // Timestamps
+  estimatedTime DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id])
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  tableId      String?
+  table        Table?      @relation(fields: [tableId], references: [id])
+  items        OrderItem[]
+  payments     Payment[]
+
+  @@map("orders")
+}
+
+// Modelo de Item en Pedido
+model OrderItem {
+  id       String @id @default(cuid())
+  quantity Int
+  price    Float
+  notes    String?
+  
+  orderId  String
+  itemId   String
+  
+  // Relaciones
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item     Item  @relation(fields: [itemId], references: [id])
+  variants OrderItemVariant[]
+
+  @@map("order_items")
+}
+
+// Modelo de Variantes en OrderItem
+model OrderItemVariant {
+  id            String @id @default(cuid())
+  orderItemId   String
+  itemVariantId String
+  
+  // Relaciones
+  orderItem     OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  itemVariant   ItemVariant @relation(fields: [itemVariantId], references: [id])
+
+  @@unique([orderItemId, itemVariantId])
+  @@map("order_item_variants")
+}
+
+// Modelo de Pago
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Float
+  method        String
+  status        String @default("PENDING")
+  transactionId String?       @unique
+  
+  orderId       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  order         Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
+
+// Modelo de Reseñas
+model Review {
+  id           String   @id @default(cuid())
+  rating       Int      // 1-5 estrellas
+  comment      String?
+  isActive     Boolean  @default(true)
+  
+  userId       String
+  restaurantId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  user         User       @relation(fields: [userId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([userId, restaurantId])
+  @@map("reviews")
+}
+
+// Modelo de Favoritos
+model UserFavorite {
+  id           String @id @default(cuid())
+  userId       String
+  restaurantId String
+  createdAt    DateTime @default(now())
+
+  // Relaciones
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@map("user_favorites")
+}
+
+// Modelo de Códigos QR
+model QRCode {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  tableNumber  String?
+  isActive     Boolean  @default(true)
+  scannedCount Int      @default(0)
+  lastScanned  DateTime?
+  
+  restaurantId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("qr_codes")
+}
+
+// Modelo de Mesas
+model Table {
+  id           String   @id @default(cuid())
+  number       String   // Número de mesa (ej: "1", "A1", "VIP-1")
+  name         String?  // Nombre opcional (ej: "Mesa Terraza")
+  capacity     Int      // Capacidad máxima de personas
+  status       String   @default("AVAILABLE") // AVAILABLE, OCCUPIED, RESERVED, CLEANING, OUT_OF_ORDER
+  
+  // Posición en el mapa del restaurante
+  positionX    Float?   // Coordenada X en el mapa
+  positionY    Float?   // Coordenada Y en el mapa
+  
+  // Información adicional
+  section      String?  // Sección del restaurante (ej: "Terraza", "Interior", "VIP")
+  isActive     Boolean  @default(true)
+  notes        String?  // Notas especiales sobre la mesa
+  
+  // Timestamps
+  lastOccupied DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders       Order[]
+  reservations TableReservation[]
+
+  @@unique([restaurantId, number])
+  @@map("tables")
+}
+
+// Modelo de Reservas de Mesa
+model TableReservation {
+  id           String   @id @default(cuid())
+  customerName String
+  customerPhone String?
+  customerEmail String?
+  partySize    Int      // Número de personas
+  
+  // Fecha y hora de la reserva
+  reservationDate DateTime
+  duration     Int      @default(120) // Duración en minutos
+  
+  status       String   @default("CONFIRMED") // CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
+  notes        String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  tableId      String
+  table        Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@map("table_reservations")
+}
+
+// String Constants (SQLite no soporta enums)
+// OrderStatus: "PENDING", "CONFIRMED", "PREPARING", "READY", "DELIVERED", "CANCELLED"
+// PaymentMethod: "CASH", "CARD", "DIGITAL", "CREDIT"
+// PaymentStatus: "PENDING", "COMPLETED", "FAILED", "REFUNDED"
+// TableStatus: "AVAILABLE", "OCCUPIED", "RESERVED", "CLEANING", "OUT_OF_ORDER"
+// ReservationStatus: "CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"
