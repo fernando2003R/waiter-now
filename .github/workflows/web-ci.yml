@@ -1,0 +1,42 @@
+name: Web CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/web/**"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "apps/web/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps (frontend)
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Type check
+        working-directory: apps/web
+        run: npm run type-check
+
+      - name: Lint
+        working-directory: apps/web
+        run: npm run lint
+
+      - name: Build
+        working-directory: apps/web
+        run: npm run build

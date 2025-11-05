@@ -19,6 +19,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    target: 'es2018'
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),

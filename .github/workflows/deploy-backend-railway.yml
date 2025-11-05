@@ -1,0 +1,36 @@
+name: Deploy Backend to Railway
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/backend/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps (backend)
+        working-directory: apps/backend
+        run: npm ci
+
+      - name: Build
+        working-directory: apps/backend
+        run: npm run build
+
+      - name: Railway Deploy
+        uses: railwayapp/railway-action@v1
+        with:
+          service: "backend"
+          project: ${{ secrets.RAILWAY_PROJECT_ID }}
+          token: ${{ secrets.RAILWAY_TOKEN }}

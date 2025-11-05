@@ -1,0 +1,17 @@
+{
+  "name": "Waiter Now",
+  "short_name": "WaiterNow",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "description": "Panel de administración para restaurantes - Waiter Now",
+  "icons": [
+    {
+      "src": "/waiter-now-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
